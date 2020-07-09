@@ -122,6 +122,7 @@
   "error.validation.minSupMax": "Can't be superior",
   "error.validation.regex": "The value not match the regex.",
   "error.validation.required": "This value input is required.",
+  "error.relation.fetch": "An error occured during relation structure fetch",
   
 
   "form.Input.bulkActions": "Enable bulk actions",

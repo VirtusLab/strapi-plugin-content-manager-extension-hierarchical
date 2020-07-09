@@ -70,8 +70,29 @@ function ListView({
   const getDataRef = useRef();
   const [isLabelPickerOpen, setLabelPickerState] = useState(false);
   const [isFilterPickerOpen, setFilterPickerState] = useState(false);
+  const [relationApiData, setRelationApiData] = useState([])
   const [idToDelete, setIdToDelete] = useState(null);
   const contentTypePath = [slug, 'contentType'];
+  const relation = get(layouts, [slug, 'contentType', 'settings', 'relationName']);
+  const collectionName = get(layouts, [slug, 'contentType', 'schema', 'collectionName']);
+  const isRelationViewEnabled = get(layouts, [slug, 'contentType', 'settings', 'relation'])
+
+  useEffect(() => {
+    if(isRelationViewEnabled) {
+      const getData = async () => {
+        try {
+          const relationData = await request(getRequestUrl(`${collectionName}/relation/${relation}`), {
+            method: 'GET',
+          });
+          setRelationApiData(relationData)
+
+        } catch (err) {
+          strapi.notification.error('error.relation.fetch');
+        } 
+      };
+      getData();
+    }
+  }, [data])
 
   getDataRef.current = async (uid, params) => {
     try {
@@ -322,7 +343,6 @@ function ListView({
     actions: headerAction,
   };
 
-  const relation = get(layouts, [slug, 'contentType', 'settings', 'relationName']);
   const relationColumnName = layouts[slug].contentType.settings.relationKey;
 
   const getIdFromParentAndChild = (obj, idsContainter) => {
@@ -347,39 +367,19 @@ function ListView({
     return ids;
   }
 
-  const createRelationStructure = () => {
-    const copiedData = data.map(el => ({ ...el }));
-    copiedData.forEach(el => {
-      let parents = copiedData.filter(x => {
-        if(x[relation]) {
-          return x[relation].id === el.id
-        } else {
-          return false
-        }
-      })
-      if(parents.length) {
-        parents.forEach( parent => {
-          if(parent.id !== el.id) {
-            parent.child = el;
-            el.isChild = true;
-          }
-        })
-      }
-    })
-    const topLevelData = copiedData.filter(el => !el.isChild)
-    return topLevelData;
+  const findInitialIds = () => data.map(dataEl => dataEl.id)
+  const initialIds = findInitialIds();
+  const idsFromNestedData = collectIdsFromNestedData(relationApiData);
+  const isStructureCorrect = () => idsFromNestedData.length === data.length
+  const isRelationApiDataCorrect = () => {
+    if(data.length === 0) {
+      return relationApiData.length === 0;
+    }
+    return relationApiData.length !== 0;
   }
 
-  const findInitialIds = () => data.map(dataEl => dataEl.id)
-
-  const initialIds = findInitialIds();
-  const relationData = createRelationStructure(data);
-  const idsFromNestedData = collectIdsFromNestedData(relationData);
-  const isStructureCorrect = () => idsFromNestedData.length === data.length
-  const isRelationViewEnabled  = layouts[slug].contentType.settings.relation;
-  const isTreeViewPossible = isStructureCorrect() && isRelationViewEnabled;
-  const isRelationErrorVisible = () => isRelationViewEnabled && !isStructureCorrect();
-
+  const isTreeViewPossible = isRelationViewEnabled && isStructureCorrect();
+  const isRelationErrorVisible = () => isRelationViewEnabled && !isStructureCorrect() && isRelationApiDataCorrect();
 
   const findRowsToHighlight = () => {
     let rows = [];
@@ -407,7 +407,7 @@ function ListView({
   return (
     <> 
       <ListViewProvider
-        data={isTreeViewPossible ? relationData : data}
+        data={isTreeViewPossible ? relationApiData : data}
         count={count}
         entriesToDelete={entriesToDelete}
         emitEvent={emitEvent}
@@ -481,7 +481,7 @@ function ListView({
             <div className="row" style={{ paddingTop: '12px' }}>
               <div className="col-12">
                 <CustomTable
-                  data={isTreeViewPossible ? relationData : data}
+                  data={isTreeViewPossible ? relationApiData : data}
                   relationColumnName={relationColumnName}
                   rowsToHighlight={isRelationErrorVisible() ? findRowsToHighlight() : []}
                   headers={getTableHeaders()}

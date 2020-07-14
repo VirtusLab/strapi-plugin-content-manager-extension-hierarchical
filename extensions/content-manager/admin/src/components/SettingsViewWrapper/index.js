@@ -109,8 +109,10 @@ const SettingsViewWrapper = ({
   }
 
   const getSelectOptions = input => {
+    const attributes = getAttributes;
+    const {settings: {relationName: relationName}} = initialData;
     if (input.name === 'settings.defaultSortBy' || input.name === 'settings.relationKey') {
-      return [
+      let options = [
         'id',
         ...getListDisplayedFields().filter(
           name =>
@@ -119,6 +121,11 @@ const SettingsViewWrapper = ({
             get(getAttributes, [name, 'type'], '') !== 'richtext'
         ),
       ];
+  // Adding single qoutes to be sure that relation switch has empty value in case of removing relation from the other part of app
+      if(!attributes[relationName]) {
+        return ['', ...options];
+      }
+      return options;
     }
 
     if (input.name === 'settings.mainField') {

@@ -1,13 +1,14 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useLocation, useHistory } from 'react-router-dom';
 import { FormattedMessage } from 'react-intl';
 import { upperFirst } from 'lodash';
 import useListView from '../../hooks/useListView';
 import TableHeader from './TableHeader';
-import { Table, TableEmpty, TableRow } from './styledComponents';
+import { Table, TableEmpty, TableRow, RootRow, ToogleRootRow } from './styledComponents';
 import ActionCollapse from './ActionCollapse';
 import Row from './Row';
+
 
 const CustomTable = ({ data, headers, isBulkable, rowsToHighlight, relationColumnName }) => {
   const {
@@ -20,6 +21,7 @@ const CustomTable = ({ data, headers, isBulkable, rowsToHighlight, relationColum
   const { push } = useHistory();
   const redirectUrl = `redirectUrl=${pathname}${search}`;
   const colSpanLength = isBulkable ? headers.length + 2 : headers.length + 1;
+  const [collapsedIds, setCollapsedIds] = useState([]);
 
   const handleGoTo = id => {
     emitEvent('willEditEntryFromList');
@@ -35,6 +37,44 @@ const CustomTable = ({ data, headers, isBulkable, rowsToHighlight, relationColum
   if (_q !== '') {
     tableEmptyMsgId = 'withSearch';
   }
+
+  const isCollapsed = (id) => collapsedIds.find(el => el === id);
+
+  const manageCollapsedIds = (id) => {
+    if(isCollapsed(id)) {
+      setCollapsedIds(collapsedIds.filter(el => el !== id))
+    } else {
+      setCollapsedIds([...collapsedIds, id])
+    }
+  }
+
+  const renderRootRow = (row, level) => (
+    <>
+      <RootRow
+        key={row.id}
+        onClick={e => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleGoTo(row.id);
+        }}
+      >
+        <Row 
+          relationColumnName={relationColumnName}
+          isWrappedWithRoot={true}
+          manageCollapsedIds={manageCollapsedIds}
+          isCollapsed={isCollapsed(row.id)}
+          isBulkable={isBulkable} 
+          headers={headers} 
+          row={row} 
+          goTo={handleGoTo} 
+          level={level+1}
+        />
+      </RootRow>
+      <ToogleRootRow className={isCollapsed(row.id) ? "collapse show" : "collapse" }>
+        {row.child && renderRowChild(row.child, level+1)}
+      </ToogleRootRow>
+    </>
+  )
 
   const renderRowChild = (row, level) => (
     <>
@@ -73,7 +113,7 @@ const CustomTable = ({ data, headers, isBulkable, rowsToHighlight, relationColum
       data.map(row => {
         if(row.child) {
           let level = -1;
-          return renderRowChild(row, level);
+          return renderRootRow(row, level);
         }
         return (
           <TableRow

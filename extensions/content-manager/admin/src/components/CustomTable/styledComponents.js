@@ -2,6 +2,7 @@
 import React from 'react';
 import styled, { css } from 'styled-components';
 import { Carret } from '@buffetjs/icons';
+import { Collapse } from 'reactstrap';
 
 const Table = styled.table`
   border-radius: 3px;
@@ -92,6 +93,30 @@ const TableRow = styled.tr`
     border-collapse: collapse;
     border-top: 1px solid #f1f1f2 !important;
   }
+`;
+
+const RootRow = styled.tr`
+  height: 54px;
+  background: #bfc4c9;
+  &:hover {
+    cursor: pointer;
+    background: #b1bbc9;
+  }
+
+  td {
+    height: 53px;
+    font-size: 1.3rem;
+    line-height: 1.8rem;
+    font-weight: 400;
+    color: #333740;
+    vertical-align: middle;
+    border-collapse: collapse;
+    border-top: 1px solid #f1f1f2 !important;
+  }
+`;
+
+const ToogleRootRow = styled.div`
+  display: contents;
 `;
 
 const Arrow = styled(({ isUp, ...rest }) => <Carret {...rest} />)`
@@ -214,6 +239,16 @@ const TreeWraper  = styled.div`
     }
 `;
 
+const IconsWrapper = styled.div`
+  display: flex;
+  justify-content: flex-end;
+`;
+
+const ArrowWrapper = styled.div`
+  margin-left: 20px;
+`;
+
+
 export {
   ActionContainer,
   Arrow,
@@ -223,10 +258,14 @@ export {
   TableDelete,
   TableEmpty,
   TableRow,
+  RootRow,
+  ToogleRootRow,
   Thead,
   Truncate,
   Truncated,
   HierarchicalTd,
   TreeWraper,
+  IconsWrapper,
+  ArrowWrapper
 };
 

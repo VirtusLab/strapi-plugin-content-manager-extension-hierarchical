@@ -14,7 +14,10 @@ import {
   Truncated,
   HierarchicalTd,
   TreeWraper,
+  IconsWrapper,
+  ArrowWrapper
 } from './styledComponents';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 /* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
 
@@ -41,7 +44,7 @@ const getDisplayedValue = (type, value, name) => {
       }
 
       const date =
-        value && isObject(value) && value._isAMomentObject === true ? JSON.stringify(value) : value;
+      value && isObject(value) && value._isAMomentObject === true ? JSON.stringify(value) : value;
 
       return moment(date).format(dateFormats[type]);
     }
@@ -71,7 +74,17 @@ const getDisplayedValue = (type, value, name) => {
   }
 };
 
-function Row({ goTo, isBulkable, row, headers, level, relationColumnName }) {
+function Row({
+  goTo,
+  isBulkable,
+  row,
+  headers,
+  level,
+  relationColumnName,
+  isWrappedWithRoot,
+  manageCollapsedIds,
+  isCollapsed,
+}) {
   const { entriesToDelete, onChangeBulk, onClickDelete, schema } = useListView();
   const memoizedDisplayedValue = useCallback(
     name => {
@@ -83,6 +96,11 @@ function Row({ goTo, isBulkable, row, headers, level, relationColumnName }) {
   );
 
   const { emitEvent } = useGlobalContext();
+
+  const rootArrowOnClick = (e, id) => {
+    e.stopPropagation();
+    manageCollapsedIds(id);
+  }
 
   return (
     <>
@@ -102,9 +120,9 @@ function Row({ goTo, isBulkable, row, headers, level, relationColumnName }) {
               <tr>
                 {get(schema, ['attributes', header.name, 'type']) !== 'media' ? (
                   <TreeWraper level={`${level * 2}rem`}>
-                      <Truncate>
-                        <Truncated>{memoizedDisplayedValue(header.name)}</Truncated>
-                      </Truncate>
+                    <Truncate>
+                      <Truncated>{memoizedDisplayedValue(header.name)}</Truncated>
+                    </Truncate>
                   </TreeWraper>
 
                 ) : (
@@ -127,26 +145,36 @@ function Row({ goTo, isBulkable, row, headers, level, relationColumnName }) {
         );
       })}
       <ActionContainer>
-        <IcoContainer
-          style={{ minWidth: 'inherit', width: '100%', lineHeight: 48 }}
-          icons={[
-            {
-              icoType: 'pencil-alt',
-              onClick: () => {
-                emitEvent('willEditEntryFromList');
-                goTo(row.id);
+        <IconsWrapper>
+          <IcoContainer
+            style={{ minWidth: 'inherit', width: '100%', lineHeight: 48 }}
+            icons={[
+              {
+                icoType: 'pencil-alt',
+                onClick: () => {
+                  emitEvent('willEditEntryFromList');
+                  goTo(row.id);
+                },
               },
-            },
-            {
-              id: row.id,
-              icoType: 'trash',
-              onClick: () => {
-                emitEvent('willDeleteEntryFromList');
-                onClickDelete(row.id);
-              },
-            },
-          ]}
-        />
+              {
+                id: row.id,
+                icoType: 'trash',
+                onClick: () => {
+                  emitEvent('willDeleteEntryFromList');
+                  onClickDelete(row.id);
+                },
+              }
+            ]}
+          />
+          {isWrappedWithRoot && (
+            <ArrowWrapper>
+              <FontAwesomeIcon 
+                icon={isCollapsed ? 'arrow-up' : 'arrow-down'}
+                onClick={(e) => rootArrowOnClick(e, row.id)}
+              />
+            </ArrowWrapper>
+          )}
+        </IconsWrapper>
       </ActionContainer>
     </>
   );

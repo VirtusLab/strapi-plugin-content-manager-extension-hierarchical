@@ -27,6 +27,10 @@ const validateRelation = async(ctx) => {
     data  = await strapi.services.placeholder.find(ctx.query);
   }
 
+  if(parentId === 'create') {
+    return ({isCorrect: true})
+  }
+
   const relationStructure = strapi.services.relation.prepareNewStructure(childId, parentId, data, relationName);
   return ({isCorrect: strapi.services.relation.isRelationStructureCorrect(data, relationStructure, relationName)})
 }

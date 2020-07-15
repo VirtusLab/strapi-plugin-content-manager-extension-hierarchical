@@ -171,7 +171,7 @@ const SettingsViewWrapper = ({
     const relationNameOptions = getRelationNameOptions();
     return relationNameOptions.length === 1 && relationNameOptions.includes("")
   }
-
+  //to fix in next buffet js release (right now we are unable to disable switch)
   const filterInputsByRelation = () => {
     const filteredInputs = inputs.filter(input => {
       return input.name !== 'settings.relationKey' && input.name !== 'settings.relationName'

@@ -16,6 +16,14 @@ const relationApiBuilder = async (contentType) => {
   ApiContent.routes = [
     {
       "method": "GET",
+      "path": `/content-manager${rootPath}/validateRelation/:relationName/:parentId/:childId`,
+      "handler": "Relation.validateRelation",
+      "config": {
+        "policies": []
+      }
+    },
+    {
+      "method": "GET",
       "path": `/content-manager${rootPath}/relation/:relationName`,
       "handler": "Relation.createRelation",
       "config": {

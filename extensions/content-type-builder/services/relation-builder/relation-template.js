@@ -1,33 +1,38 @@
 const { sanitizeEntity } = require('strapi-utils');
 
+const  createRelation = async(ctx) => {
+  const { relationName } = ctx.params; 
+  let data;
+  if (ctx.query._q) {
+    data = await strapi.services.placeholder.search(ctx.query);
+  } else {
+    data  = await strapi.services.placeholder.find(ctx.query);
+  }
+
+  const relationStructure = strapi.services.relation.createRelationStructure(data, relationName);
+
+  return {
+    relationStructure:  relationStructure,
+    isStructureCorrect: strapi.services.relation.isRelationStructureCorrect(data, relationStructure, relationName),
+    rowsToHighlight: strapi.services.relation.findRowsToHighlight(relationStructure, relationName, data),
+  }
+}
+
+const validateRelation = async(ctx) => {
+  const {relationName, parentId, childId} = ctx.params;
+  let data;
+  if (ctx.query._q) {
+    data = await strapi.services.placeholder.search(ctx.query);
+  } else {
+    data  = await strapi.services.placeholder.find(ctx.query);
+  }
+
+  const relationStructure = strapi.services.relation.prepareNewStructure(childId, parentId, data, relationName);
+  return ({isCorrect: strapi.services.relation.isRelationStructureCorrect(data, relationStructure, relationName)})
+}
+
 module.exports = {
-  async createRelation(ctx) {
-    const { relationName } = ctx.params; 
-    let data;
-    if (ctx.query._q) {
-      data = await strapi.services.placeholder.search(ctx.query);
-    } else {
-      data  = await strapi.services.placeholder.find(ctx.query);
-    }
-    const copiedData = data.map(el => ({ ...el }));
-    copiedData.forEach(el => {
-      let parents = copiedData.filter(x => {
-        if(x[relationName]) {
-          return x[relationName].id === el.id
-        } else {
-          return false
-        }
-      })
-      if(parents.length) {
-        parents.forEach( parent => {
-          if(parent.id !== el.id) {
-            parent.child = el;
-            el.isChild = true;
-          }
-        })
-      }
-    })
-    return copiedData.filter(el => !el.isChild)
-  },
-};
+  createRelation,
+  validateRelation
+}
 

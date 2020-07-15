@@ -70,7 +70,9 @@ function ListView({
   const getDataRef = useRef();
   const [isLabelPickerOpen, setLabelPickerState] = useState(false);
   const [isFilterPickerOpen, setFilterPickerState] = useState(false);
-  const [relationApiData, setRelationApiData] = useState([])
+  const [relationApiData, setRelationApiData] = useState([]);
+  const [isStructureCorrect, setIsStructureCorrect] = useState(true);
+  const [rowsToHighlight, setRowsToHighlight] = useState([]);
   const [idToDelete, setIdToDelete] = useState(null);
   const contentTypePath = [slug, 'contentType'];
   const relation = get(layouts, [slug, 'contentType', 'settings', 'relationName']);
@@ -84,11 +86,13 @@ function ListView({
           const relationData = await request(getRequestUrl(`${collectionName}/relation/${relation}`), {
             method: 'GET',
           });
-          setRelationApiData(relationData)
+          setRelationApiData(relationData.relationStructure);
+          setIsStructureCorrect(relationData.isStructureCorrect);
+          setRowsToHighlight(relationData.rowsToHighlight);
 
         } catch (err) {
-          strapi.notification.error('error.relation.fetch');
-        } 
+          strapi.notification.error('content-manager.error.relation.fetch');
+        }
       };
       getData();
     }
@@ -345,32 +349,6 @@ function ListView({
 
   const relationColumnName = layouts[slug].contentType.settings.relationKey;
 
-  const getIdFromParentAndChild = (obj, idsContainter) => {
-    if(idsContainter.includes(obj.id)) {
-      idsContainter.push(obj.id);
-      return;
-    }
-    idsContainter.push(obj.id);
-    if(obj.child) {
-      getIdFromParentAndChild(obj.child, idsContainter);
-    }
-    if(obj[relation] && obj[relation].id === obj.id){
-      idsContainter.push(obj.id)
-    }
-  }
-
-  const collectIdsFromNestedData = (nestedData) => {
-    let ids = [];
-    nestedData.forEach(el => {
-      getIdFromParentAndChild(el, ids)
-    })
-    return ids;
-  }
-
-  const findInitialIds = () => data.map(dataEl => dataEl.id)
-  const initialIds = findInitialIds();
-  const idsFromNestedData = collectIdsFromNestedData(relationApiData);
-  const isStructureCorrect = () => idsFromNestedData.length === data.length
   const isRelationApiDataCorrect = () => {
     if(data.length === 0) {
       return relationApiData.length === 0;
@@ -378,31 +356,8 @@ function ListView({
     return relationApiData.length !== 0;
   }
 
-  const isTreeViewPossible = isRelationViewEnabled && isStructureCorrect();
-  const isRelationErrorVisible = () => isRelationViewEnabled && !isStructureCorrect() && isRelationApiDataCorrect();
-
-  const findRowsToHighlight = () => {
-    let rows = [];
-    initialIds.forEach(id => {
-      if(!idsFromNestedData.includes(id)){
-        rows.push(id);
-      }
-    })
-    const duplicatedIds = idsFromNestedData.filter((e, i, a) => a.indexOf(e) !== i);
-    duplicatedIds.forEach(id => {
-      const parents = data.filter(dataEl => {
-        if(dataEl[relation]) {
-          return dataEl[relation].id === id;
-        }
-      })
-      parents.forEach(parent => {
-        if (parent.id) {
-          rows.push(parent.id)
-        }
-      })
-    }) 
-    return rows;
-  }
+  const isTreeViewPossible = isRelationViewEnabled && isStructureCorrect;
+  const isRelationErrorVisible = () => isRelationViewEnabled && !isStructureCorrect && isRelationApiDataCorrect();
 
   return (
     <> 
@@ -483,7 +438,7 @@ function ListView({
                 <CustomTable
                   data={isTreeViewPossible ? relationApiData : data}
                   relationColumnName={relationColumnName}
-                  rowsToHighlight={isRelationErrorVisible() ? findRowsToHighlight() : []}
+                  rowsToHighlight={isRelationErrorVisible() ? rowsToHighlight : []}
                   headers={getTableHeaders()}
                   isBulkable={getLayoutSettingRef.current('bulkable')}
                   onChangeParams={handleChangeParams}

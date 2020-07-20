@@ -357,7 +357,7 @@ function ListView({
   }
 
   const isTreeViewPossible = isRelationViewEnabled && isStructureCorrect;
-  const isRelationErrorVisible = () => isRelationViewEnabled && !isStructureCorrect && isRelationApiDataCorrect();
+  const isRelationErrorVisible = () => isRelationViewEnabled && !isStructureCorrect && !isRelationApiDataCorrect();
 
   return (
     <> 

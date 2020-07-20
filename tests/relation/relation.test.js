@@ -8,7 +8,7 @@ const {
 } = require("../../hooks/relation/utils");
 
 describe("getIdFromParentAndChild", () => {
-  it("should return [1,2]", () => {
+  it("should return [1,2] for dual nested data and fakeRelationName", () => {
     expect(
       getIdFromParentAndChild(
         {
@@ -26,7 +26,7 @@ describe("getIdFromParentAndChild", () => {
     ).toEqual([1, 2]);
   });
 
-  it("should return [1,1]", () => {
+  it("should return [1,1] for single nested data and fakeRelationName ", () => {
     expect(
       getIdFromParentAndChild(
         {
@@ -41,7 +41,7 @@ describe("getIdFromParentAndChild", () => {
     ).toEqual([1, 1]);
   });
 
-  it("should return [1]", () => {
+  it("should return [1] for not nested data and fakeRelationName", () => {
     expect(
       getIdFromParentAndChild(
         {
@@ -55,14 +55,29 @@ describe("getIdFromParentAndChild", () => {
       )
     ).toEqual([1]);
   });
+
+  it("should not return [1,2] for not nested data and fakeRelationName", () => {
+    expect(
+      getIdFromParentAndChild(
+        {
+          id: 1,
+          fakeRelationName1: {
+            id: 1
+          }
+        },
+        "fakeRelationName",
+        []
+      )
+    ).not.toEqual([1, 2]);
+  });
 });
 
 describe("collectIdsFromNestedData", () => {
-  it("should return empty array", () => {
+  it("should return empty array for empty data and fakeRelationName", () => {
     expect(collectIdsFromNestedData([], "fakeRelationName")).toEqual([]);
   });
 
-  it("should return [1,2,2,2]", () => {
+  it("should return [1,2,2,2] for single nested data and fakeRelationName", () => {
     expect(
       collectIdsFromNestedData(
         [
@@ -81,11 +96,11 @@ describe("collectIdsFromNestedData", () => {
           }
         ],
         "fakeRelationName"
-      ).sort()
-    ).toEqual([1, 2, 2, 2]);
+      )
+    ).toEqual([1, 2, 2]);
   });
 
-  it("should return [1,2,3]", () => {
+  it("should return [1,2,3] for double neested data and fakeRelationName", () => {
     expect(
       collectIdsFromNestedData(
         [
@@ -107,17 +122,43 @@ describe("collectIdsFromNestedData", () => {
           }
         ],
         "fakeRelationName"
-      ).sort()
+      )
     ).toEqual([1, 2, 3]);
+  });
+
+  it("should not return [1,2,3,4] for double neested data and fakeRelationName", () => {
+    expect(
+      collectIdsFromNestedData(
+        [
+          {
+            id: 1,
+            child: {
+              id: 2,
+              fakeRelationName: {
+                id: 3
+              },
+              child: {
+                id: 3,
+                fakeRelationName: null
+              }
+            },
+            fakeRelationName: {
+              id: 2
+            }
+          }
+        ],
+        "fakeRelationName"
+      )
+    ).not.toEqual([1, 2, 3, 4]);
   });
 });
 
 describe("createRelationStructure", () => {
-  it("should return empty array", () => {
+  it("should return empty array for empty array and fakeRelationName", () => {
     expect(createRelationStructure([], "fakeRelationName")).toEqual([]);
   });
 
-  it("should return proper relation data", () => {
+  it("should return single object for single nested data", () => {
     expect(
       createRelationStructure(
         [
@@ -133,7 +174,7 @@ describe("createRelationStructure", () => {
           }
         ],
         "fakeRelationName"
-      ).sort()
+      )
     ).toEqual([
       {
         id: 1,
@@ -149,7 +190,7 @@ describe("createRelationStructure", () => {
     ]);
   });
 
-  it("should return input data", () => {
+  it("for data without relation property should return the same data", () => {
     expect(
       createRelationStructure(
         [
@@ -165,7 +206,7 @@ describe("createRelationStructure", () => {
           }
         ],
         "fakeRelationName1"
-      ).sort()
+      )
     ).toEqual([
       {
         id: 1,
@@ -176,6 +217,38 @@ describe("createRelationStructure", () => {
       {
         id: 2,
         fakeRelationName: null
+      }
+    ]);
+  });
+
+  it("should not return single object for single nested data", () => {
+    expect(
+      createRelationStructure(
+        [
+          {
+            id: 1,
+            fakeRelationName: {
+              id: 2
+            }
+          },
+          {
+            id: 2,
+            fakeRelationName: null
+          }
+        ],
+        "fakeRelationName"
+      )
+    ).not.toEqual([
+      {
+        id: 1,
+        child: {
+          id: 2,
+          fakeRelationName: null,
+          isChild: true
+        },
+        fakeRelationName: {
+          id: 3
+        }
       }
     ]);
   });
@@ -198,7 +271,7 @@ describe("prepareNewStructure", () => {
           }
         ],
         "relationName"
-      ).sort()
+      )
     ).toEqual([
       {
         id: 1,
@@ -234,7 +307,7 @@ describe("prepareNewStructure", () => {
           }
         ],
         "relationName"
-      ).sort()
+      )
     ).toEqual([
       {
         id: 1,
@@ -243,6 +316,38 @@ describe("prepareNewStructure", () => {
       {
         id: 2,
         relationName: null
+      }
+    ]);
+  });
+
+  it("should not change property 'relationName' of object with id 1 from object with id 2 to null", () => {
+    expect(
+      prepareNewStructure(
+        -1,
+        1,
+        [
+          {
+            id: 1,
+            relationName: {
+              id: 2,
+              relationName: null
+            }
+          },
+          {
+            id: 2,
+            relationName: null
+          }
+        ],
+        "relationName"
+      )
+    ).not.toEqual([
+      {
+        id: 1,
+        relationName: null
+      },
+      {
+        id: 2,
+        relationName: 1
       }
     ]);
   });
@@ -330,10 +435,44 @@ describe("isRelationStructureCorrect", () => {
       )
     ).toEqual(true);
   });
+
+  it("should not return false", () => {
+    expect(
+      isRelationStructureCorrect(
+        [
+          {
+            id: 1,
+            relationName: {
+              id: 2
+            }
+          },
+          {
+            id: 2,
+            relationName: null
+          }
+        ],
+        [
+          {
+            id: 1,
+            relationName: {
+              id: 2,
+              relationName: null
+            },
+            child: {
+              id: 2,
+              isChild: true,
+              relationName: null
+            }
+          }
+        ],
+        "relationName"
+      )
+    ).not.toEqual(false);
+  });
 });
 
 describe("findRowsToHighlight", () => {
-  it("should return array with 1", () => {
+  it("should return array with 1 for not nested data with id = 1", () => {
     expect(
       findRowsToHighlight(
         [
@@ -353,7 +492,7 @@ describe("findRowsToHighlight", () => {
             }
           }
         ]
-      ).sort()
+      )
     ).toEqual([1]);
   });
 
@@ -361,32 +500,32 @@ describe("findRowsToHighlight", () => {
     expect(findRowsToHighlight([], "", [])).toEqual([]);
   });
 
-  it("should return all elements id", () => {
+  it("should return all elements id for single nested data with wrong relation", () => {
     expect(
-      findRowsToHighlight(
-        [],
-        "relationName",
-        [
-          {
-            id: 1,
-            relationName: {
-              id: 2
-            }
-          },
-          {
-            id:2,
-            relationName: {
-              id:3
-            }
-          },
-          {
-            id:3,
-            relationName:{
-              id:1
-            }
+      findRowsToHighlight([], "relationName", [
+        {
+          id: 1,
+          relationName: {
+            id: 2
           }
-        ]
-      ).sort()
-    ).toEqual([1,2,3]);
+        },
+        {
+          id: 2,
+          relationName: {
+            id: 3
+          }
+        },
+        {
+          id: 3,
+          relationName: {
+            id: 1
+          }
+        }
+      ])
+    ).toEqual([1, 2, 3]);
+  });
+
+  it("should not return [1] for empty data", () => {
+    expect(findRowsToHighlight([], "", [])).not.toEqual([1]);
   });
 });
